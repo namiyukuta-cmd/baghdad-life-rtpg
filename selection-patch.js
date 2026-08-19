@@ -1,36 +1,41 @@
 // 行動・移動を即実行せず、選択してから「決定」するための操作パッチ。
-// 移動先を選ぶと、その場所へ到着した時点で実行できる行動を先に確認できる。
+// 移動先を選ぶと、その場所へ到着した時点で可能な行動を直接組み立てて表示する。
+// 既存renderActionsの多重パッチに依存しないようにして、施し所などが消える不具合を防ぐ。
 
 let plannedMoveId = null;
 let plannedActionKey = null;
-let plannedActionExecute = null;
 
-const selectionBaseRenderActions = renderActions;
 const selectionBaseRenderMoves = renderMoves;
 
-function previewActionState(callback){
-  if(!plannedMoveId){
-    callback();
-    return;
-  }
+const ACTION_DEFS = [
+  { key:'pickup',  label:'拾い物を探す',       detail:'60分',              fn:()=>doPickup(),     primary:true },
+  { key:'beg',     label:'路上で物乞い',       detail:'60分',              fn:()=>doBeg() },
+  { key:'charity', label:'施し所で食事と水',   detail:'',                  fn:()=>doCharity() },
+  { key:'work',    label:'仕事を探す',         detail:'60分',              fn:()=>doWorkSearch() },
+  { key:'sell',    label:'拾い物を1つ売る',    detail:'30分',              fn:()=>doSellOne() },
+  { key:'river',   label:'川の水を飲む',       detail:'20分・病気リスク',  fn:()=>doDrinkRiver() },
+  { key:'cleanse', label:'身を清める',         detail:'10分',              fn:()=>doCleanse() },
+  { key:'prayer',  label:'礼拝',               detail:'10分',              fn:()=>doPrayer() },
+  { key:'rest',    label:'休む',               detail:'30分',              fn:()=>doRest() }
+];
 
+function withPreviewState(callback){
   const liveState = state;
   try {
-    state = clone(liveState);
-    const minutes = travelMinutes[plannedMoveId] || 0;
-    advanceTime(minutes);
-    state.location = plannedMoveId;
-    callback();
+    if(plannedMoveId){
+      state = clone(liveState);
+      const minutes = travelMinutes[plannedMoveId] || 0;
+      advanceTime(minutes);
+      state.location = plannedMoveId;
+    }
+    return callback();
   } finally {
     state = liveState;
   }
 }
 
-function actionKeyFromButton(button){
-  const cloneButton = button.cloneNode(true);
-  const small = cloneButton.querySelector('small');
-  if(small) small.remove();
-  return cloneButton.textContent.trim();
+function previewLocationId(){
+  return plannedMoveId || state.location;
 }
 
 function resetDecisionConfirm(){
@@ -46,78 +51,62 @@ function updateActionHeading(){
   title.textContent = plannedMoveId ? `行動（${locations[plannedMoveId].name}）` : '行動';
 }
 
-// 施し所は他のパッチで利用条件を上書きしているため、
-// 移動先プレビュー時にボタンが消えてしまった場合もここで必ず案内を出す。
-function ensurePlannedDestinationActions(){
-  if(plannedMoveId !== 'L003') return;
-
-  const box = document.getElementById('actions');
-  if(!box) return;
-
-  const existing = [...box.querySelectorAll('button.action')]
-    .some(button => button.textContent.includes('施し所で食事'));
-  if(existing) return;
-
-  const needsHelp = typeof charityNeedsHelp === 'function'
-    ? charityNeedsHelp()
-    : !(state.food >= 5 && state.thirst >= 5);
-  if(!needsHelp) return;
-
-  const blocked = typeof charityBlockedByMoney === 'function'
-    ? charityBlockedByMoney()
-    : false;
-
-  const inWindow = (inRange(420,540) || inRange(1020,1140));
+function addActionButton(box, def, detail, disabled=false, overrideLabel=null){
   const b = document.createElement('button');
-  b.className = 'action';
+  b.className = `action${def && def.primary ? ' primary' : ''}`;
+  if(disabled) b.disabled = true;
+  const label = overrideLabel || (def ? def.label : '');
+  b.innerHTML = `${label}${detail ? `<small>${detail}</small>` : ''}`;
 
-  if(blocked){
-    b.disabled = true;
-    b.innerHTML = '今日は施し所は満杯だ<small>現在は利用できない</small>';
-  } else if(!inWindow){
-    b.disabled = true;
-    b.innerHTML = '施し所で食事と水<small>配給時間 07:00-09:00 / 17:00-19:00</small>';
-  } else {
-    const wait = typeof charityWaitMinutes === 'function' ? charityWaitMinutes() : 30;
-    b.innerHTML = `施し所で食事と水<small>${wait}分・原則受給</small>`;
-    b.onclick = doCharity;
+  if(!disabled && def){
+    if(def.key === plannedActionKey) b.classList.add('selected-choice');
+    b.onclick = () => {
+      plannedActionKey = plannedActionKey === def.key ? null : def.key;
+      resetDecisionConfirm();
+      renderActions();
+    };
   }
-
-  // 「何もない」表示が入っていれば消す。
-  [...box.children].forEach(child => {
-    if(child !== b && !child.matches('button.action') && child.textContent.includes('実行できる行動はありません')){
-      child.remove();
-    }
-  });
   box.appendChild(b);
 }
 
 renderActions = function selectableRenderActions(){
-  previewActionState(() => {
-    selectionBaseRenderActions();
-    ensurePlannedDestinationActions();
-  });
-
   const box = document.getElementById('actions');
-  [...box.querySelectorAll('button.action')].forEach(button => {
-    if(button.disabled) return;
+  box.innerHTML = '';
 
-    const originalExecute = button.onclick;
-    const key = actionKeyFromButton(button);
+  withPreviewState(() => {
+    const locId = state.location;
 
-    if(key === plannedActionKey){
-      button.classList.add('selected-choice');
-      plannedActionExecute = originalExecute;
+    // 施し所だけは、利用不可の理由も見えるようにする。
+    if(locId === 'L003'){
+      const needsHelp = typeof charityNeedsHelp === 'function'
+        ? charityNeedsHelp()
+        : !(state.food >= 5 && state.thirst >= 5);
+
+      if(needsHelp){
+        const blocked = typeof charityBlockedByMoney === 'function' && charityBlockedByMoney();
+        const open = (inRange(420,540) || inRange(1020,1140));
+        const charityDef = ACTION_DEFS.find(d => d.key === 'charity');
+
+        if(blocked){
+          addActionButton(box, charityDef, '現在は利用できない', true, '今日は施し所は満杯だ');
+        } else if(open){
+          const wait = typeof charityWaitMinutes === 'function' ? charityWaitMinutes() : 30;
+          addActionButton(box, charityDef, `${wait}分・原則受給`);
+        } else {
+          addActionButton(box, charityDef, '配給時間 07:00-09:00 / 17:00-19:00', true);
+        }
+      }
     }
 
-    button.onclick = () => {
-      plannedActionKey = key;
-      plannedActionExecute = originalExecute;
-      [...box.querySelectorAll('button.action')].forEach(b => b.classList.remove('selected-choice'));
-      button.classList.add('selected-choice');
-      resetDecisionConfirm();
-    };
+    // 施し所以外の通常行動。
+    ACTION_DEFS.filter(def => def.key !== 'charity').forEach(def => {
+      if(actionAvailable(def.key)) addActionButton(box, def, def.detail);
+    });
   });
+
+  if(!box.children.length){
+    box.innerHTML = '<div class="muted">ここで実行できる行動はありません。</div>';
+  }
 
   updateActionHeading();
 };
@@ -135,7 +124,6 @@ renderMoves = function selectableRenderMoves(){
     button.onclick = () => {
       plannedMoveId = plannedMoveId === id ? null : id;
       plannedActionKey = null;
-      plannedActionExecute = null;
       resetDecisionConfirm();
       renderMoves();
       renderActions();
@@ -146,7 +134,6 @@ renderMoves = function selectableRenderMoves(){
 function clearPlan(){
   plannedMoveId = null;
   plannedActionKey = null;
-  plannedActionExecute = null;
   resetDecisionConfirm();
 }
 
@@ -155,27 +142,28 @@ function showDecisionConfirm(){
     toast('行動か移動を選んでください');
     return;
   }
-
-  const decisionBtn = document.getElementById('decisionBtn');
-  const confirmBox = document.getElementById('decisionConfirm');
-  if(decisionBtn) decisionBtn.hidden = true;
-  if(confirmBox) confirmBox.hidden = false;
+  document.getElementById('decisionBtn').hidden = true;
+  document.getElementById('decisionConfirm').hidden = false;
 }
 
 function executePlan(){
   const moveId = plannedMoveId;
-  const actionExecute = plannedActionExecute;
-  const hasAction = !!plannedActionKey && typeof actionExecute === 'function';
+  const actionKey = plannedActionKey;
+  const actionDef = ACTION_DEFS.find(d => d.key === actionKey);
 
   clearPlan();
 
   if(moveId){
     moveTo(moveId);
-    // 所持金や施し所条件などで移動できなかった場合は、その先の行動も実行しない。
     if(state.location !== moveId) return;
   }
 
-  if(hasAction) actionExecute();
+  if(actionDef && actionAvailable(actionDef.key)){
+    actionDef.fn();
+  } else if(actionKey === 'charity' && actionDef){
+    // 施し所は独自条件を持つため、doCharity側にも最終判定させる。
+    actionDef.fn();
+  }
 }
 
 document.getElementById('decisionBtn').onclick = showDecisionConfirm;
