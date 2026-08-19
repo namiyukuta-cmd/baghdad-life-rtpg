@@ -89,14 +89,14 @@ h1 { margin: 0; font-size: 17px; line-height: 1.05; }
   background: var(--paper);
   border: 2px solid var(--line);
   border-radius: 10px;
-  padding: 3px 1px 2px;
+  padding: 4px 1px 3px;
   text-align: center;
   box-shadow: var(--shadow);
-  min-height: 45px;
+  min-height: 38px;
 }
 .meter-name { display: block; font-size: 8px; color: var(--muted); line-height: 1; }
-.meter-value { display: block; font-size: 15px; font-weight: 800; line-height: 1; }
-.meter-dots { display: block; letter-spacing: -1.6px; font-size: 7px; margin-top: 1px; white-space: nowrap; }
+.meter-value { display: block; font-size: 16px; font-weight: 800; line-height: 1.05; margin-top: 2px; }
+.meter-dots { display: none; }
 
 .status-card { flex: 0 0 auto; }
 .money-row { font-size: 10px; line-height: 1.1; }
@@ -243,8 +243,8 @@ h1 { margin: 0; font-size: 17px; line-height: 1.05; }
   .app { gap: 3px; padding-top: 3px; padding-bottom: 3px; }
   .card { padding-block: 4px; }
   .result-card { height: 48px; }
-  .meter { min-height: 39px; }
-  .meter-value { font-size: 14px; }
+  .meter { min-height: 34px; }
+  .meter-value { font-size: 15px; }
   .small-btn { min-height: 27px; }
   .tab { min-height: 25px; }
   .action, .move { min-height: 31px; font-size: 10px; }
