@@ -10,7 +10,7 @@
 <body>
   <main class="app">
     <header class="topbar">
-      <div>
+      <div class="title-block">
         <p class="eyebrow">9世紀・バグダード生活型ソロTRPG</p>
         <h1>橋のたもとから</h1>
       </div>
@@ -25,7 +25,7 @@
 
     <section class="meters" id="meters"></section>
 
-    <section class="card compact-card">
+    <section class="card compact-card status-card">
       <div class="money-row">
         <span>所持金 <strong id="moneyText"></strong></span>
         <span>評判 <strong id="repText"></strong></span>
@@ -36,40 +36,54 @@
 
     <section class="card result-card" aria-live="polite">
       <div class="section-title">直前の出来事</div>
-      <div id="resultText">川沿いで朝を迎えている。</div>
+      <div id="resultText"></div>
     </section>
 
-    <section class="card">
-      <div class="section-title">行動</div>
-      <div id="actions" class="action-grid"></div>
-    </section>
+    <nav class="tabbar" aria-label="ゲーム画面切り替え">
+      <button class="tab active" data-panel="actionsPanel">行動</button>
+      <button class="tab" data-panel="movesPanel">移動</button>
+      <button class="tab" data-panel="inventoryPanel">所持品</button>
+      <button class="tab" data-panel="skillsPanel">スキル</button>
+      <button class="tab" data-panel="logPanel">ログ</button>
+    </nav>
 
-    <section class="card">
-      <div class="section-title">移動</div>
-      <div id="moves" class="move-grid"></div>
-    </section>
+    <section class="panel-shell">
+      <section id="actionsPanel" class="card game-panel active">
+        <div id="actions" class="action-grid"></div>
+      </section>
 
-    <details class="card">
-      <summary>所持品</summary>
-      <div id="inventory" class="list"></div>
-    </details>
+      <section id="movesPanel" class="card game-panel">
+        <div id="moves" class="move-grid"></div>
+      </section>
 
-    <details class="card">
-      <summary>スキル</summary>
-      <div id="skills" class="list"></div>
-    </details>
+      <section id="inventoryPanel" class="card game-panel">
+        <div id="inventory" class="list"></div>
+      </section>
 
-    <details class="card">
-      <summary>行動ログ</summary>
-      <div id="log" class="list log-list"></div>
-    </details>
+      <section id="skillsPanel" class="card game-panel">
+        <div id="skills" class="list"></div>
+      </section>
 
-    <section class="bottom-actions">
-      <button id="resetBtn" class="danger-link">この端末のセーブを初期状態に戻す</button>
+      <section id="logPanel" class="card game-panel">
+        <div id="log" class="list log-list"></div>
+        <button id="resetBtn" class="danger-link">この端末のセーブを初期状態に戻す</button>
+      </section>
     </section>
   </main>
 
   <div id="toast" class="toast" hidden></div>
   <script src="app.js"></script>
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.game-panel');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.panel).classList.add('active');
+      });
+    });
+  </script>
 </body>
 </html>
