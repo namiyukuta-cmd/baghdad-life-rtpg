@@ -2,6 +2,7 @@
 // 公共の井戸は「汲む」場所なので、水容器がない状態では飲水アクションを追加しない。
 // 施し所は低所得時の生活保障として、時間帯内なら原則として食事と水を受け取れる。
 // ただし待ち時間は時間帯で変化し、一定以上の所持金がある場合は満杯扱いで利用できない。
+// 食欲と乾きが両方満タンなら施しは選べず、受給後に両方満タンになった場合は外へ促される。
 
 // 経済バランス確定前の暫定値。後で設定値だけ差し替えられるよう1か所にまとめる。
 const CHARITY_MONEY_LIMIT = 1.0;
@@ -20,6 +21,10 @@ function charityBlockedByMoney(){
   return state.money >= CHARITY_MONEY_LIMIT;
 }
 
+function charityNeedsHelp(){
+  return !(state.food >= 5 && state.thirst >= 5);
+}
+
 function charityWaitMinutes(){
   const t = currentMinutes();
   // 配給開始直後は列が長く、終盤ほど短くなる。
@@ -32,6 +37,12 @@ function charityWaitMinutes(){
 function doCharity(){
   ensureCharityInternal();
   if(!charityWindowOpen()) return;
+
+  if(!charityNeedsHelp()){
+    state.lastResult = "食欲も乾きも満ちている。施しは必要ないとして、外へ出るよう促された。";
+    render();
+    return;
+  }
 
   if(charityBlockedByMoney()){
     state.lastResult = "今日は施し所は満杯だ。中には入れなかった。";
@@ -52,7 +63,10 @@ function doCharity(){
   state.internal.charityUnreturnedCount += 1;
   state.internal.turn += 1;
 
-  state.lastResult = `施し所の列に${wait}分並び、食事と水を受け取った。食欲と乾きが回復した。`;
+  const leaveText = state.food >= 5 && state.thirst >= 5
+    ? " 食事を終えると、次の人のために外へ出るよう促された。"
+    : "";
+  state.lastResult = `施し所の列に${wait}分並び、食事と水を受け取った。食欲と乾きが回復した。${leaveText}`;
   addLog(`施し所：食事と水／待ち${wait}分`);
   finishAction();
 }
@@ -67,6 +81,11 @@ moveTo = function patchedCharityMoveTo(id){
     render();
     return;
   }
+  if(id === "L003" && !charityNeedsHelp()){
+    state.lastResult = "食欲も乾きも満ちているため、施し所へ入る必要はない。";
+    render();
+    return;
+  }
   charityBaseMoveTo(id);
 };
 
@@ -75,6 +94,7 @@ const charityBaseActionAvailable = actionAvailable;
 actionAvailable = function patchedCharityActionAvailable(action){
   if(action === "charity"){
     if(!charityWindowOpen()) return false;
+    if(!charityNeedsHelp()) return false;
     return !charityBlockedByMoney();
   }
   return charityBaseActionAvailable(action);
@@ -102,6 +122,17 @@ renderActions = function patchedCharityRenderActions(){
     b.innerHTML = "今日は施し所は満杯だ<small>現在は利用できない</small>";
     box.appendChild(b);
   }
+};
+
+// 食欲・乾きが両方満タンなら、移動先としても施し所を選べない。
+const charityBaseRenderMoves = renderMoves;
+renderMoves = function patchedCharityRenderMoves(){
+  charityBaseRenderMoves();
+  if(charityNeedsHelp()) return;
+  const box = document.getElementById("moves");
+  [...box.querySelectorAll('.move')].forEach(button => {
+    if(button.textContent.includes("施し所")) button.remove();
+  });
 };
 
 ensureCharityInternal();
