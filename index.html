@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#ead9bd">
   <title>バグダード生活TRPG</title>
   <link rel="stylesheet" href="styles.css?v=6">
-  <link rel="stylesheet" href="layout-patch.css?v=1">
+  <link rel="stylesheet" href="layout-patch.css?v=2">
 </head>
 <body>
   <main class="app">
@@ -50,13 +50,21 @@
     <section class="panel-shell">
       <section id="playPanel" class="game-panel active play-panel">
         <section class="card play-section">
-          <div class="section-title">行動</div>
+          <div id="actionTitle" class="section-title">行動</div>
           <div id="actions" class="action-grid"></div>
         </section>
 
         <section class="card play-section">
           <div class="section-title">移動</div>
           <div id="moves" class="move-grid"></div>
+        </section>
+
+        <section class="decision-row">
+          <button id="decisionBtn" class="decision-btn">決定</button>
+          <div id="decisionConfirm" class="decision-confirm" hidden>
+            <button id="decisionYes">はい</button>
+            <button id="decisionNo">いいえ</button>
+          </div>
         </section>
       </section>
 
@@ -79,6 +87,7 @@
   <script src="app.js?v=5"></script>
   <script src="ui-patch.js?v=1"></script>
   <script src="water-patch.js?v=3"></script>
+  <script src="selection-patch.js?v=1"></script>
   <script>
     const tabs = document.querySelectorAll('.tab');
     const panels = document.querySelectorAll('.game-panel');
