@@ -46,8 +46,57 @@ function updateActionHeading(){
   title.textContent = plannedMoveId ? `行動（${locations[plannedMoveId].name}）` : '行動';
 }
 
+// 施し所は他のパッチで利用条件を上書きしているため、
+// 移動先プレビュー時にボタンが消えてしまった場合もここで必ず案内を出す。
+function ensurePlannedDestinationActions(){
+  if(plannedMoveId !== 'L003') return;
+
+  const box = document.getElementById('actions');
+  if(!box) return;
+
+  const existing = [...box.querySelectorAll('button.action')]
+    .some(button => button.textContent.includes('施し所で食事'));
+  if(existing) return;
+
+  const needsHelp = typeof charityNeedsHelp === 'function'
+    ? charityNeedsHelp()
+    : !(state.food >= 5 && state.thirst >= 5);
+  if(!needsHelp) return;
+
+  const blocked = typeof charityBlockedByMoney === 'function'
+    ? charityBlockedByMoney()
+    : false;
+
+  const inWindow = (inRange(420,540) || inRange(1020,1140));
+  const b = document.createElement('button');
+  b.className = 'action';
+
+  if(blocked){
+    b.disabled = true;
+    b.innerHTML = '今日は施し所は満杯だ<small>現在は利用できない</small>';
+  } else if(!inWindow){
+    b.disabled = true;
+    b.innerHTML = '施し所で食事と水<small>配給時間 07:00-09:00 / 17:00-19:00</small>';
+  } else {
+    const wait = typeof charityWaitMinutes === 'function' ? charityWaitMinutes() : 30;
+    b.innerHTML = `施し所で食事と水<small>${wait}分・原則受給</small>`;
+    b.onclick = doCharity;
+  }
+
+  // 「何もない」表示が入っていれば消す。
+  [...box.children].forEach(child => {
+    if(child !== b && !child.matches('button.action') && child.textContent.includes('実行できる行動はありません')){
+      child.remove();
+    }
+  });
+  box.appendChild(b);
+}
+
 renderActions = function selectableRenderActions(){
-  previewActionState(() => selectionBaseRenderActions());
+  previewActionState(() => {
+    selectionBaseRenderActions();
+    ensurePlannedDestinationActions();
+  });
 
   const box = document.getElementById('actions');
   [...box.querySelectorAll('button.action')].forEach(button => {
