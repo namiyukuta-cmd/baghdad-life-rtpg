@@ -1,0 +1,170 @@
+:root {
+  color-scheme: light;
+  --bg: #efe3cf;
+  --paper: #fffaf0;
+  --ink: #3d3027;
+  --muted: #79695b;
+  --line: #8a674f;
+  --accent: #b85f68;
+  --accent-2: #d98b92;
+  --soft: #f5dfdc;
+  --ok: #5f7f68;
+  --warn: #9a6b36;
+  --shadow: 0 3px 0 rgba(88, 59, 43, .12);
+}
+
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,.45), transparent 22rem),
+    var(--bg);
+}
+button { font: inherit; }
+
+.app {
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: 14px 12px 36px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 2px 10px;
+}
+.eyebrow { margin: 0 0 2px; font-size: 11px; color: var(--muted); }
+h1 { margin: 0; font-size: 22px; letter-spacing: .02em; }
+
+.card {
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 13px;
+  margin-bottom: 10px;
+}
+.compact-card { padding-block: 10px; }
+.world-card { background: #fff8ea; }
+.result-card { background: #fffdf7; }
+
+.date-line, .money-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.date-line { font-size: 16px; }
+.place-line { margin-top: 8px; font-size: 14px; }
+.muted { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+.meters {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.meter {
+  background: var(--paper);
+  border: 2px solid var(--line);
+  border-radius: 13px;
+  padding: 8px 4px 7px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.meter-name { display: block; font-size: 11px; color: var(--muted); }
+.meter-value { display: block; font-size: 19px; font-weight: 800; line-height: 1.1; }
+.meter-dots { display: block; letter-spacing: -1px; font-size: 11px; margin-top: 2px; }
+
+.money-row { font-size: 13px; }
+.ability-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ability-row b { color: var(--ink); }
+
+.section-title {
+  font-weight: 800;
+  font-size: 14px;
+  margin-bottom: 9px;
+}
+
+.action-grid, .move-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.action, .move, .small-btn {
+  border: 2px solid var(--line);
+  background: #fff6ef;
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 10px 8px;
+  min-height: 46px;
+  font-weight: 700;
+  box-shadow: 0 2px 0 rgba(88, 59, 43, .13);
+  cursor: pointer;
+}
+.action.primary { background: var(--soft); border-color: var(--accent); }
+.action:active, .move:active, .small-btn:active { transform: translateY(1px); box-shadow: none; }
+.action[disabled], .move[disabled] { opacity: .42; cursor: default; }
+.action small, .move small { display: block; font-weight: 500; color: var(--muted); margin-top: 2px; }
+.small-btn { min-height: auto; padding: 7px 12px; background: #fffaf2; }
+
+summary { cursor: pointer; font-weight: 800; font-size: 14px; }
+details[open] summary { margin-bottom: 9px; }
+.list { display: grid; gap: 6px; }
+.list-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(138,103,79,.38);
+  font-size: 13px;
+}
+.list-row:first-child { border-top: 0; padding-top: 0; }
+.log-list { max-height: 220px; overflow: auto; }
+.log-time { color: var(--muted); white-space: nowrap; }
+
+.bottom-actions { text-align: center; padding: 8px; }
+.danger-link {
+  border: 0;
+  background: transparent;
+  color: #8b4b4b;
+  text-decoration: underline;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: white;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.22);
+  z-index: 10;
+}
+
+@media (max-width: 430px) {
+  .app { padding-inline: 9px; }
+  .meters { gap: 4px; }
+  .meter { padding-inline: 2px; }
+  .meter-name { font-size: 10px; }
+  .meter-value { font-size: 18px; }
+  .action-grid, .move-grid { gap: 6px; }
+  .action, .move { font-size: 13px; padding-inline: 6px; }
+}
