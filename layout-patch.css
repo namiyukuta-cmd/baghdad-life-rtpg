@@ -1,0 +1,52 @@
+.tabbar {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.play-panel.active {
+  display: grid !important;
+  grid-template-rows: minmax(0, .9fr) minmax(0, 1.25fr);
+  gap: 5px;
+  overflow: hidden;
+}
+
+.play-section {
+  min-height: 0;
+  overflow: hidden;
+  padding: 5px 7px;
+}
+
+.play-section .section-title {
+  margin-bottom: 3px;
+}
+
+.play-section .action-grid,
+.play-section .move-grid {
+  height: calc(100% - 14px);
+  gap: 3px;
+}
+
+.play-section .action,
+.play-section .move {
+  min-height: 29px;
+  padding: 2px 3px;
+  font-size: 10px;
+}
+
+.play-section .action small,
+.play-section .move small {
+  font-size: 8px;
+}
+
+@media (max-height: 700px) {
+  .play-panel.active {
+    gap: 3px;
+  }
+  .play-section {
+    padding: 3px 5px;
+  }
+  .play-section .action,
+  .play-section .move {
+    min-height: 26px;
+    font-size: 9px;
+  }
+}
